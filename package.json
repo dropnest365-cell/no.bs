@@ -1,0 +1,28 @@
+{
+  "name": "no-bs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NO BS — Make money. Build something real. A business and side-hustle platform for India.",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c yellow,cyan \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w client",
+    "start": "npm run start -w server",
+    "setup": "npm install && npm run db:setup",
+    "db:setup": "npm run db:push -w server && npm run db:seed -w server",
+    "db:push": "npm run db:push -w server",
+    "db:seed": "npm run db:seed -w server",
+    "make-admin": "npm run make-admin -w server --",
+    "lint": "npm run typecheck -w client",
+    "preview": "npm run preview -w client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,211 @@
+// NO BS database schema
+// SQLite for local development. The schema intentionally avoids SQLite-only
+// features so it can be moved to PostgreSQL by changing the datasource provider.
+// Note: list-like fields are stored as JSON strings for portability.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("USER") // USER | ADMIN
+  bio          String?
+  city         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  bookmarks     Bookmark[]
+  roadmaps      Roadmap[]
+  conversations Conversation[]
+  drafts        ContentDraft[]
+  guides        Guide[]
+  createdIdeas  Idea[]
+
+  @@index([role])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String
+  mode        String   @default("BOTH") // ONLINE | OFFLINE | BOTH
+  icon        String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ideas Idea[]
+}
+
+model Idea {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  title            String
+  summary          String
+  description      String
+  categoryId       String
+  mode             String // ONLINE | OFFLINE
+  skills           String // JSON string[]
+  equipment        String // JSON string[]
+  startingCostMin  Int
+  startingCostMax  Int
+  recurringExpenses String // JSON string[]
+  revenueStreams   String // JSON string[]
+  targetCustomers  String
+  competition      String
+  difficulty       String // BEGINNER | INTERMEDIATE | ADVANCED
+  timeCommitment   String
+  steps            String // JSON string[]
+  marketing        String // JSON string[]
+  risks            String // JSON string[]
+  legal            String // JSON string[]
+  resources        String // JSON [{label,url,note?}]
+  sources          String // JSON [{label,url,verifiedAt?}]
+  published        Boolean  @default(true)
+  featured         Boolean  @default(false)
+  lastVerifiedAt   DateTime @default(now())
+  createdById      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  category  Category  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  createdBy User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  bookmarks Bookmark[]
+
+  @@index([mode, published])
+  @@index([categoryId])
+  @@index([difficulty])
+  @@index([startingCostMin])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  ideaId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ideaId])
+  @@index([userId])
+}
+
+model Roadmap {
+  id            String   @id @default(cuid())
+  userId        String
+  title         String
+  idea          String
+  budget        Int
+  location      String
+  skills        String
+  timeAvailable String
+  goals         String
+  stages        String // JSON [{key,title,summary,tasks:[{id,title,done}]}]
+  progress      Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([userId])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String // USER | ASSISTANT
+  content        String
+  source         String   @default("USER") // USER | AI | RULE_BASED
+  flagged        Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+}
+
+model Tool {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  name           String
+  description    String
+  category       String
+  url            String
+  pricing        String   @default("UNKNOWN") // FREE | FREEMIUM | PAID | UNKNOWN
+  published      Boolean  @default(true)
+  lastVerifiedAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([category, published])
+}
+
+model Guide {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  title          String
+  excerpt        String
+  body           String
+  category       String
+  published      Boolean  @default(true)
+  lastVerifiedAt DateTime @default(now())
+  sources        String // JSON [{label,url}]
+  isCommunity    Boolean  @default(false)
+  authorId       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  author         User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([published])
+}
+
+model ContentDraft {
+  id           String    @id @default(cuid())
+  type         String // AI_ANSWER | ANALYZER | ROADMAP_NOTE | GUIDE_SUGGESTION
+  title        String
+  body         String
+  source       String // AI | RULE_BASED
+  status       String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  userId       String?
+  reviewerNote String?
+  createdAt    DateTime  @default(now())
+  reviewedAt   DateTime?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([userId])
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  handled   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
