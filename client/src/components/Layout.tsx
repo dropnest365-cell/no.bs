@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowRight, BookOpen, ChevronRight, LayoutDashboard, LogOut, Menu, ShieldCheck, X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { LoadingBlock } from './ui';
 import { cn, initial } from '../lib/format';
 
 const NAV = [
@@ -32,6 +33,46 @@ function ScrollToTop() {
   return null;
 }
 
+const SITE_NAME = 'NO BS';
+const DEFAULT_TITLE = 'NO BS — Make money. Build something real.';
+
+// Static route titles. Dynamic detail pages (ideas/:slug, guides/:slug) set
+// their own title after the data loads, so they are intentionally omitted.
+const TITLES: Record<string, string> = {
+  '/': DEFAULT_TITLE,
+  '/ideas': `Business ideas — ${SITE_NAME}`,
+  '/ideas/online': `Online business ideas — ${SITE_NAME}`,
+  '/ideas/offline': `Offline business ideas — ${SITE_NAME}`,
+  '/mentor': `AI business mentor — ${SITE_NAME}`,
+  '/analyzer': `Idea analyzer — ${SITE_NAME}`,
+  '/roadmap': `90-day roadmap — ${SITE_NAME}`,
+  '/tools': `Free business tools — ${SITE_NAME}`,
+  '/tools/startup-cost-calculator': `Startup cost calculator — ${SITE_NAME}`,
+  '/tools/profit-calculator': `Profit calculator — ${SITE_NAME}`,
+  '/tools/pricing-calculator': `Pricing calculator — ${SITE_NAME}`,
+  '/guides': `Business guides — ${SITE_NAME}`,
+  '/bookmarks': `Saved ideas — ${SITE_NAME}`,
+  '/dashboard': `Dashboard — ${SITE_NAME}`,
+  '/admin': `Admin — ${SITE_NAME}`,
+  '/about': `About & method — ${SITE_NAME}`,
+  '/contact': `Contact — ${SITE_NAME}`,
+  '/privacy': `Privacy — ${SITE_NAME}`,
+  '/terms': `Terms — ${SITE_NAME}`,
+};
+
+function DocumentTitle() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const title = TITLES[pathname];
+    // Leave dynamic detail pages alone; they set their own title once loaded.
+    if (title) document.title = title;
+    else if (!/^\/(ideas|guides)\/[^/]+$/.test(pathname)) {
+      document.title = `Page not found — ${SITE_NAME}`;
+    }
+  }, [pathname]);
+  return null;
+}
+
 export function Layout() {
   const { user, loading, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -48,6 +89,7 @@ export function Layout() {
   return (
     <div className="flex min-h-screen flex-col">
       <ScrollToTop />
+      <DocumentTitle />
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-ink-900 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
@@ -82,7 +124,7 @@ export function Layout() {
             </nav>
           </div>
 
-          <div className="hidden items-center gap-2 md:flex">
+          <div className="hidden items-center gap-2 lg:flex">
             {loading ? (
               <div className="h-8 w-24 animate-pulse rounded-md bg-paper-200" />
             ) : user ? (
@@ -123,7 +165,7 @@ export function Layout() {
           <button
             type="button"
             onClick={() => setMenuOpen((open) => !open)}
-            className="rounded-md border border-paper-300 bg-white p-2 text-ink-700 md:hidden"
+            className="rounded-md border border-paper-300 bg-white p-2 text-ink-700 lg:hidden"
             aria-expanded={menuOpen}
             aria-controls="mobile-menu"
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
@@ -133,7 +175,7 @@ export function Layout() {
         </div>
 
         {menuOpen && (
-          <div id="mobile-menu" className="border-t border-paper-200 bg-paper-50 md:hidden">
+          <div id="mobile-menu" className="border-t border-paper-200 bg-paper-50 lg:hidden">
             <nav className="container-page flex flex-col py-4" aria-label="Mobile navigation">
               {NAV.map((item) => (
                 <NavLink
@@ -170,7 +212,15 @@ export function Layout() {
       </header>
 
       <main id="main" className="flex-1">
-        <Outlet />
+        <Suspense
+          fallback={
+            <div className="container-page py-24">
+              <LoadingBlock label="Loading…" />
+            </div>
+          }
+        >
+          <Outlet />
+        </Suspense>
       </main>
 
       <Footer />

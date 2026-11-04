@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Calculator, TrendingUp } from 'lucide-react';
+import { AlertTriangle, Calculator, RotateCcw, TrendingUp } from 'lucide-react';
 import { inr, toNumber } from '../lib/format';
 import { CalculatorFrame, ResultCard, NumberLine, BarRow } from '../components/CalculatorFrame';
 
@@ -42,6 +42,15 @@ export function ProfitCalculatorPage() {
 
   const tone = numbers.netProfit > 0 ? 'good' : numbers.netProfit === 0 ? 'flat' : 'bad';
 
+  function reset() {
+    setRevenue('100000');
+    setCogs('40000');
+    setOpex('25000');
+    setOwnerPay('15000');
+  }
+
+  const clamp = (value: string) => String(Math.max(0, toNumber(value)));
+
   return (
     <CalculatorFrame
       eyebrow="Free calculator · monthly INR"
@@ -65,6 +74,7 @@ export function ProfitCalculatorPage() {
               min="0"
               value={revenue}
               onChange={(event) => setRevenue(event.target.value)}
+              onBlur={() => setRevenue(clamp(revenue))}
               className="input"
             />
             <p className="field-hint">Money collected from sales or services, before expenses.</p>
@@ -77,6 +87,7 @@ export function ProfitCalculatorPage() {
               min="0"
               value={cogs}
               onChange={(event) => setCogs(event.target.value)}
+              onBlur={() => setCogs(clamp(cogs))}
               className="input"
             />
             <p className="field-hint">Materials, stock, packaging and direct delivery per order.</p>
@@ -89,6 +100,7 @@ export function ProfitCalculatorPage() {
               min="0"
               value={opex}
               onChange={(event) => setOpex(event.target.value)}
+              onBlur={() => setOpex(clamp(opex))}
               className="input"
             />
             <p className="field-hint">Rent, utilities, software, marketing, salaries, fees.</p>
@@ -101,10 +113,15 @@ export function ProfitCalculatorPage() {
               min="0"
               value={ownerPay}
               onChange={(event) => setOwnerPay(event.target.value)}
+              onBlur={() => setOwnerPay(clamp(ownerPay))}
               className="input"
             />
             <p className="field-hint">What you need to take out each month. Zero hides the real cost of your time.</p>
           </div>
+
+          <button type="button" onClick={reset} className="btn-ghost btn-sm w-full" title="Reset to the example numbers">
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> Reset example numbers
+          </button>
         </div>
       }
       result={

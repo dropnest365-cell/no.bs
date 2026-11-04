@@ -7,6 +7,7 @@ import {
 import { api, ApiError } from '../lib/api';
 import type { Idea } from '../lib/types';
 import { formatDate, inr, inrRange } from '../lib/format';
+import { safeExternalUrl } from '../lib/url';
 import { BookmarkButton } from '../components/BookmarkButton';
 import { IdeaCard } from '../components/IdeaCard';
 import { CategoryIcon } from '../components/CategoryIcon';
@@ -31,11 +32,16 @@ export function IdeaDetailPage() {
         if (!active) return;
         setIdea(response.idea);
         setRelated(response.related);
+        document.title = `${response.idea.title} — NO BS`;
       })
       .catch((err) => {
         if (!active) return;
-        if (err instanceof ApiError && err.status === 404) setNotFound(true);
-        else setError(err instanceof ApiError ? err.message : 'Could not load this business idea.');
+        if (err instanceof ApiError && err.status === 404) {
+          setNotFound(true);
+          document.title = 'Idea not found — NO BS';
+        } else {
+          setError(err instanceof ApiError ? err.message : 'Could not load this business idea.');
+        }
       })
       .finally(() => active && setLoading(false));
     return () => { active = false; };
@@ -292,22 +298,25 @@ export function IdeaDetailPage() {
             <section aria-labelledby="resources" className="mt-10">
               <h2 id="resources" className="font-display text-3xl text-ink-950">Official resources</h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {idea.resources.map((resource) => (
-                  <a
-                    key={resource.url + resource.label}
-                    href={resource.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-start justify-between gap-3 rounded-xl border border-paper-200 bg-white p-4 transition-colors hover:border-ink-400"
-                  >
+                {idea.resources.map((resource) => {
+                  const href = safeExternalUrl(resource.url);
+                  const body = (
                     <div>
                       <p className="text-sm font-semibold text-ink-900 group-hover:text-brand-700">{resource.label}</p>
                       {resource.note && <p className="mt-1 text-xs leading-5 text-ink-500">{resource.note}</p>}
                       <p className="mt-2 break-all text-[11px] text-ink-400">{resource.url}</p>
                     </div>
-                    <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-ink-400" aria-hidden="true" />
-                  </a>
-                ))}
+                  );
+                  const className = 'group flex items-start justify-between gap-3 rounded-xl border border-paper-200 bg-white p-4 transition-colors hover:border-ink-400';
+                  return href ? (
+                    <a key={resource.url + resource.label} href={href} target="_blank" rel="noopener noreferrer" className={className}>
+                      {body}
+                      <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-ink-400" aria-hidden="true" />
+                    </a>
+                  ) : (
+                    <div key={resource.url + resource.label} className={className}>{body}</div>
+                  );
+                })}
               </div>
               <div className="mt-5 rounded-xl border border-paper-200 bg-paper-50 p-4">
                 <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-ink-500">

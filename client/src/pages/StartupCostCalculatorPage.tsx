@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Plus, Trash2, Wallet } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Plus, RotateCcw, Trash2, Wallet } from 'lucide-react';
 import { inr, toNumber } from '../lib/format';
 import { CalculatorFrame, ResultCard, NumberLine, BarRow } from '../components/CalculatorFrame';
 
@@ -29,12 +29,12 @@ export function StartupCostCalculatorPage() {
   const [available, setAvailable] = useState('');
 
   const numbers = useMemo(() => {
-    const oneTime = items.reduce((sum, item) => sum + toNumber(item.amount), 0);
+    const oneTime = items.reduce((sum, item) => sum + Math.max(0, toNumber(item.amount)), 0);
     const contingencyPct = Math.min(50, Math.max(0, toNumber(contingency)));
     const contingencyAmount = Math.round((oneTime * contingencyPct) / 100);
     const startupTotal = oneTime + contingencyAmount;
     const monthlyCost = Math.max(0, toNumber(monthly));
-    const runwayMonths = Math.max(0, toNumber(runway));
+    const runwayMonths = Math.min(36, Math.max(0, Math.floor(toNumber(runway))));
     const runwayCost = monthlyCost * runwayMonths;
     const cashNeeded = startupTotal + runwayCost;
     const cashAvailable = available.trim() ? Math.max(0, toNumber(available)) : null;
@@ -58,6 +58,14 @@ export function StartupCostCalculatorPage() {
 
   function remove(id: number) {
     setItems((current) => current.filter((item) => item.id !== id));
+  }
+
+  function reset() {
+    setItems(STARTING_ITEMS.map((item) => ({ ...item })));
+    setContingency('10');
+    setMonthly('8000');
+    setRunway('3');
+    setAvailable('');
   }
 
   return (
@@ -94,6 +102,7 @@ export function StartupCostCalculatorPage() {
                       min="0"
                       value={item.amount}
                       onChange={(event) => update(item.id, 'amount', event.target.value)}
+                      onBlur={() => update(item.id, 'amount', String(Math.max(0, toNumber(item.amount))))}
                       className="input h-9 pl-6 text-xs"
                     />
                   </div>
@@ -111,13 +120,23 @@ export function StartupCostCalculatorPage() {
             ))}
           </div>
 
-          <button
-            type="button"
-            onClick={() => setItems((current) => [...current, { id: uid(), label: 'New cost', amount: '0' }])}
-            className="btn-secondary btn-sm w-full"
-          >
-            <Plus className="h-3.5 w-3.5" aria-hidden="true" /> Add another cost
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setItems((current) => [...current, { id: uid(), label: 'New cost', amount: '0' }])}
+              className="btn-secondary btn-sm flex-1"
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" /> Add another cost
+            </button>
+            <button
+              type="button"
+              onClick={reset}
+              className="btn-ghost btn-sm"
+              title="Reset to the example numbers"
+            >
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> Reset
+            </button>
+          </div>
 
           <div className="grid grid-cols-2 gap-3 border-t border-paper-200 pt-4">
             <div>
@@ -129,6 +148,7 @@ export function StartupCostCalculatorPage() {
                 max="50"
                 value={contingency}
                 onChange={(event) => setContingency(event.target.value)}
+                onBlur={() => setContingency(String(Math.min(50, Math.max(0, toNumber(contingency)))))}
                 className="input"
               />
             </div>
@@ -141,6 +161,7 @@ export function StartupCostCalculatorPage() {
                 max="36"
                 value={runway}
                 onChange={(event) => setRunway(event.target.value)}
+                onBlur={() => setRunway(String(Math.min(36, Math.max(0, Math.floor(toNumber(runway))))))}
                 className="input"
               />
             </div>
@@ -154,6 +175,7 @@ export function StartupCostCalculatorPage() {
               min="0"
               value={monthly}
               onChange={(event) => setMonthly(event.target.value)}
+              onBlur={() => setMonthly(String(Math.max(0, toNumber(monthly))))}
               className="input"
             />
             <p className="field-hint">Rent, utilities, subscriptions, transport and your own basic draw.</p>
@@ -167,6 +189,7 @@ export function StartupCostCalculatorPage() {
               min="0"
               value={available}
               onChange={(event) => setAvailable(event.target.value)}
+              onBlur={() => setAvailable(available.trim() ? String(Math.max(0, toNumber(available))) : '')}
               className="input"
               placeholder="e.g. 100000"
             />

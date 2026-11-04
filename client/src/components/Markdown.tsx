@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { isInternalHref, isSafeExternalHref } from '../lib/url';
 
 function inline(text: string, keyPrefix: string): ReactNode[] {
   const pattern = /(\[([^\]]+)\]\(([^)\s]+)\)|\*\*([^*]+)\*\*|_([^_]+)_|`([^`]+)`)/g;
@@ -14,14 +15,17 @@ function inline(text: string, keyPrefix: string): ReactNode[] {
     if (match[2] && match[3]) {
       const label = match[2];
       const href = match[3];
-      if (href.startsWith('/')) {
+      if (isInternalHref(href)) {
         nodes.push(<Link key={key} to={href} className="link-underline">{label}</Link>);
-      } else {
+      } else if (isSafeExternalHref(href)) {
         nodes.push(
           <a key={key} href={href} target="_blank" rel="noopener noreferrer" className="link-underline">
             {label}
           </a>,
         );
+      } else {
+        // Unsafe or malformed scheme: show the text without making it clickable.
+        nodes.push(<span key={key}>{label}</span>);
       }
     } else if (match[4]) {
       nodes.push(<strong key={key} className="font-semibold text-ink-900">{match[4]}</strong>);

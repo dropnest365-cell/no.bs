@@ -1,6 +1,21 @@
 import { z } from 'zod';
 import { ApiError } from '../middleware/error.js';
 
+// Only allow links that are safe to place in an href. This blocks javascript:,
+// data: and other schemes that a plain z.string().url() would accept.
+const httpUrlSchema = z
+  .string()
+  .trim()
+  .max(500)
+  .refine((value) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }, 'URL must start with http:// or https://');
+
 export const emailSchema = z.string().trim().toLowerCase().email('Enter a valid email address').max(254);
 export const passwordSchema = z
   .string()
@@ -83,7 +98,7 @@ export const adminIdeaSchema = z.object({
   legal: z.array(z.string().trim().min(3).max(300)).max(20),
   resources: z.array(z.object({
     label: z.string().trim().min(1).max(120),
-    url: z.string().url().max(500),
+    url: httpUrlSchema,
     note: z.string().trim().max(300).optional(),
   })).max(20),
   published: z.boolean().default(true),
@@ -112,7 +127,7 @@ export const adminGuideSchema = z.object({
   published: z.boolean().default(true),
   sources: z.array(z.object({
     label: z.string().trim().min(1).max(160),
-    url: z.string().url().max(500),
+    url: httpUrlSchema,
     note: z.string().trim().max(300).optional(),
   })).max(20).default([]),
   lastVerifiedAt: z.coerce.date().optional(),

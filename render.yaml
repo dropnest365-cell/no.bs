@@ -1,0 +1,40 @@
+# Render Blueprint for the NO BS monorepo.
+#
+# This file is only read when you create a service with Render's
+# "New > Blueprint" flow. It does not modify an existing service that was
+# created manually in the dashboard; apply the same values by hand there.
+#
+# Topology: one Node web service serves both the REST API (/api/*) and the
+# built React app (client/dist). Root Directory stays blank so the build can
+# see the client, and the server's SPA fallback handles client-side routes.
+#
+# SQLite lives on a persistent disk at /var/data so data survives deploys.
+# Persistent disks require a paid instance type and disable zero-downtime
+# deploys.
+
+services:
+  - type: web
+    name: no-bs
+    runtime: node
+    plan: starter
+    buildCommand: npm ci --include=dev && npm run build && npm run db:generate -w server
+    startCommand: npm run db:push -w server && npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    disk:
+      name: no-bs-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Absolute path: Render mounts the disk only at runtime, never at build.
+      - key: DATABASE_URL
+        value: file:/var/data/no-bs.db
+      - key: JWT_SECRET
+        generateValue: true
+      - key: COOKIE_SECURE
+        value: true
+      # Set this to the service's public URL, e.g. https://no-bs.onrender.com
+      - key: CLIENT_ORIGIN
+        sync: false

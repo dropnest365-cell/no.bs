@@ -1,31 +1,40 @@
-import type { ReactNode } from 'react';
+import { lazy, type ReactNode } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ShieldAlert } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import { Layout } from './components/Layout';
 import { LoadingBlock } from './components/ui';
 import { HomePage } from './pages/HomePage';
-import { IdeasPage } from './pages/IdeasPage';
-import { IdeaDetailPage } from './pages/IdeaDetailPage';
-import { MentorPage } from './pages/MentorPage';
-import { AnalyzerPage } from './pages/AnalyzerPage';
-import { RoadmapPage } from './pages/RoadmapPage';
-import { ToolsPage } from './pages/ToolsPage';
-import { StartupCostCalculatorPage } from './pages/StartupCostCalculatorPage';
-import { ProfitCalculatorPage } from './pages/ProfitCalculatorPage';
-import { PricingCalculatorPage } from './pages/PricingCalculatorPage';
-import { GuidesPage } from './pages/GuidesPage';
-import { GuideDetailPage } from './pages/GuideDetailPage';
-import { BookmarksPage } from './pages/BookmarksPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { AdminPage } from './pages/AdminPage';
-import { LoginPage } from './pages/LoginPage';
-import { RegisterPage } from './pages/RegisterPage';
-import { AboutPage } from './pages/AboutPage';
-import { ContactPage } from './pages/ContactPage';
-import { PrivacyPage } from './pages/PrivacyPage';
-import { TermsPage } from './pages/TermsPage';
-import { NotFoundPage } from './pages/NotFoundPage';
+
+// Route-level code splitting keeps the first load small. The Layout provides the
+// Suspense boundary so the header and footer stay visible while a page loads.
+const IdeasPage = lazy(() => import('./pages/IdeasPage').then((m) => ({ default: m.IdeasPage })));
+const IdeaDetailPage = lazy(() => import('./pages/IdeaDetailPage').then((m) => ({ default: m.IdeaDetailPage })));
+const MentorPage = lazy(() => import('./pages/MentorPage').then((m) => ({ default: m.MentorPage })));
+const AnalyzerPage = lazy(() => import('./pages/AnalyzerPage').then((m) => ({ default: m.AnalyzerPage })));
+const RoadmapPage = lazy(() => import('./pages/RoadmapPage').then((m) => ({ default: m.RoadmapPage })));
+const ToolsPage = lazy(() => import('./pages/ToolsPage').then((m) => ({ default: m.ToolsPage })));
+const StartupCostCalculatorPage = lazy(() =>
+  import('./pages/StartupCostCalculatorPage').then((m) => ({ default: m.StartupCostCalculatorPage })),
+);
+const ProfitCalculatorPage = lazy(() =>
+  import('./pages/ProfitCalculatorPage').then((m) => ({ default: m.ProfitCalculatorPage })),
+);
+const PricingCalculatorPage = lazy(() =>
+  import('./pages/PricingCalculatorPage').then((m) => ({ default: m.PricingCalculatorPage })),
+);
+const GuidesPage = lazy(() => import('./pages/GuidesPage').then((m) => ({ default: m.GuidesPage })));
+const GuideDetailPage = lazy(() => import('./pages/GuideDetailPage').then((m) => ({ default: m.GuideDetailPage })));
+const BookmarksPage = lazy(() => import('./pages/BookmarksPage').then((m) => ({ default: m.BookmarksPage })));
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const AdminPage = lazy(() => import('./pages/AdminPage').then((m) => ({ default: m.AdminPage })));
+const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import('./pages/RegisterPage').then((m) => ({ default: m.RegisterPage })));
+const AboutPage = lazy(() => import('./pages/AboutPage').then((m) => ({ default: m.AboutPage })));
+const ContactPage = lazy(() => import('./pages/ContactPage').then((m) => ({ default: m.ContactPage })));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then((m) => ({ default: m.PrivacyPage })));
+const TermsPage = lazy(() => import('./pages/TermsPage').then((m) => ({ default: m.TermsPage })));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 
 function ProtectedRoute({ children, admin = false }: { children: ReactNode; admin?: boolean }) {
   const { user, loading } = useAuth();

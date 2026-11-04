@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Calculator, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Calculator, CheckCircle2, RotateCcw } from 'lucide-react';
 import { inr, toNumber } from '../lib/format';
 import { CalculatorFrame, ResultCard, NumberLine } from '../components/CalculatorFrame';
 
@@ -16,6 +16,18 @@ export function PricingCalculatorPage() {
   const [units, setUnits] = useState('200');
   const [margin, setMargin] = useState('35');
   const [fee, setFee] = useState('2');
+
+  function reset() {
+    setUnitCost('250');
+    setOtherVariable('40');
+    setFixed('30000');
+    setUnits('200');
+    setMargin('35');
+    setFee('2');
+  }
+
+  const clamp = (value: string, min: number, max = Number.POSITIVE_INFINITY) =>
+    String(Math.min(max, Math.max(min, toNumber(value))));
 
   const numbers = useMemo(() => {
     const direct = Math.max(0, toNumber(unitCost));
@@ -89,11 +101,11 @@ export function PricingCalculatorPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label htmlFor="pricing-unit-cost" className="label">Direct cost / unit (₹)</label>
-              <input id="pricing-unit-cost" type="number" min="0" value={unitCost} onChange={(event) => setUnitCost(event.target.value)} className="input" />
+              <input id="pricing-unit-cost" type="number" min="0" value={unitCost} onChange={(event) => setUnitCost(event.target.value)} onBlur={() => setUnitCost(clamp(unitCost, 0))} className="input" />
             </div>
             <div>
               <label htmlFor="pricing-other" className="label">Other variable cost (₹)</label>
-              <input id="pricing-other" type="number" min="0" value={otherVariable} onChange={(event) => setOtherVariable(event.target.value)} className="input" />
+              <input id="pricing-other" type="number" min="0" value={otherVariable} onChange={(event) => setOtherVariable(event.target.value)} onBlur={() => setOtherVariable(clamp(otherVariable, 0))} className="input" />
             </div>
           </div>
           <p className="field-hint -mt-2">Packaging, delivery, payment fees or freelancer costs per order.</p>
@@ -101,28 +113,32 @@ export function PricingCalculatorPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label htmlFor="pricing-fixed" className="label">Fixed costs / month (₹)</label>
-              <input id="pricing-fixed" type="number" min="0" value={fixed} onChange={(event) => setFixed(event.target.value)} className="input" />
+              <input id="pricing-fixed" type="number" min="0" value={fixed} onChange={(event) => setFixed(event.target.value)} onBlur={() => setFixed(clamp(fixed, 0))} className="input" />
             </div>
             <div>
               <label htmlFor="pricing-units" className="label">Expected units / month</label>
-              <input id="pricing-units" type="number" min="1" value={units} onChange={(event) => setUnits(event.target.value)} className="input" />
+              <input id="pricing-units" type="number" min="1" value={units} onChange={(event) => setUnits(event.target.value)} onBlur={() => setUnits(clamp(units, 1))} className="input" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label htmlFor="pricing-margin" className="label">Target margin (%)</label>
-              <input id="pricing-margin" type="number" min="0" max="90" value={margin} onChange={(event) => setMargin(event.target.value)} className="input" />
+              <input id="pricing-margin" type="number" min="0" max="90" value={margin} onChange={(event) => setMargin(event.target.value)} onBlur={() => setMargin(clamp(margin, 0, 90))} className="input" />
             </div>
             <div>
               <label htmlFor="pricing-fee" className="label">Payment fee (%)</label>
-              <input id="pricing-fee" type="number" min="0" max="20" value={fee} onChange={(event) => setFee(event.target.value)} className="input" />
+              <input id="pricing-fee" type="number" min="0" max="20" value={fee} onChange={(event) => setFee(event.target.value)} onBlur={() => setFee(clamp(fee, 0, 20))} className="input" />
             </div>
           </div>
           <p className="field-hint -mt-2">
             Payment gateways and marketplaces charge different rates. Use the highest one you expect to pay, and add
             fixed per-transaction fees to your variable cost.
           </p>
+
+          <button type="button" onClick={reset} className="btn-ghost btn-sm w-full" title="Reset to the example numbers">
+            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> Reset example numbers
+          </button>
         </div>
       }
       result={

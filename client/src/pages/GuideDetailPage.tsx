@@ -6,6 +6,7 @@ import {
 import { api, ApiError } from '../lib/api';
 import type { Guide } from '../lib/types';
 import { formatDate } from '../lib/format';
+import { safeExternalUrl } from '../lib/url';
 import { Markdown } from '../components/Markdown';
 import { Badge, ErrorBlock, LoadingBlock } from '../components/ui';
 
@@ -32,8 +33,12 @@ export function GuideDetailPage() {
       })
       .catch((err) => {
         if (!active) return;
-        if (err instanceof ApiError && err.status === 404) setNotFound(true);
-        else setError(err instanceof ApiError ? err.message : 'Could not load this guide.');
+        if (err instanceof ApiError && err.status === 404) {
+          setNotFound(true);
+          document.title = 'Guide not found — NO BS';
+        } else {
+          setError(err instanceof ApiError ? err.message : 'Could not load this guide.');
+        }
       })
       .finally(() => active && setLoading(false));
     return () => { active = false; };
@@ -161,23 +166,33 @@ export function GuideDetailPage() {
               </p>
               {guide.sources.length > 0 ? (
                 <ul className="mt-3 divide-y divide-paper-100">
-                  {guide.sources.map((source) => (
-                    <li key={source.url + source.label}>
-                      <a
-                        href={source.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group flex items-start justify-between gap-2 py-2.5"
-                      >
-                        <span>
-                          <span className="block text-sm font-medium text-ink-800 group-hover:text-brand-700">{source.label}</span>
-                          {source.note && <span className="mt-0.5 block text-[11px] leading-4 text-ink-500">{source.note}</span>}
-                          <span className="mt-0.5 block break-all text-[10px] text-ink-400">{source.url}</span>
-                        </span>
-                        <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ink-300 group-hover:text-ink-700" aria-hidden="true" />
-                      </a>
-                    </li>
-                  ))}
+                  {guide.sources.map((source) => {
+                    const href = safeExternalUrl(source.url);
+                    const body = (
+                      <span>
+                        <span className="block text-sm font-medium text-ink-800 group-hover:text-brand-700">{source.label}</span>
+                        {source.note && <span className="mt-0.5 block text-[11px] leading-4 text-ink-500">{source.note}</span>}
+                        <span className="mt-0.5 block break-all text-[10px] text-ink-400">{source.url}</span>
+                      </span>
+                    );
+                    return (
+                      <li key={source.url + source.label}>
+                        {href ? (
+                          <a
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex items-start justify-between gap-2 py-2.5"
+                          >
+                            {body}
+                            <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ink-300 group-hover:text-ink-700" aria-hidden="true" />
+                          </a>
+                        ) : (
+                          <div className="flex items-start justify-between gap-2 py-2.5">{body}</div>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               ) : (
                 <p className="mt-3 text-xs leading-5 text-ink-500">
